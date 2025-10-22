@@ -1,0 +1,59 @@
+# Global vars - can be used in any command.
+vars:
+  sshHost:
+    multi: false
+    # Possible option values for the variable.
+    options:
+      - localhost
+      - user@remote.example.com
+
+  service:
+    multi: false
+    # Options can also be derived from a command. The command should output one option per line.
+    options_cmd: systemctl list-units --type=service --no-legend | awk '{print $1}'
+
+  containers:
+    multi: true
+    # Delimiter used when multiple options are selected. Only affects vars with multi: true.
+    delimiter: " "
+    options_cmd: docker ps --format '{{.Names}}'
+
+commands:
+  # Var references without a var definition will be prompted as free-form input.
+  - title: Search with Ripgrep
+    cmd: rg {{pattern}} {{path}} --hidden --glob '!node_modules'
+
+  - title: Follow Systemd Service Logs
+    cmd: journalctl -u {{service}} -f
+
+  - title: SSH to Host
+    cmd: ssh {{sshHost}}
+
+  - title: Copy File to SSH Host
+    cmd: scp {{localPath}} {{sshHost}}:{{remotePath}}
+    vars:
+      remotePath:
+        multi: false
+        options:
+          - /tmp
+          - /home/$USER
+
+  - title: Follow Docker Container Logs
+    cmd: docker logs -f --tail 200 {{container}}
+    # Local vars - if global vars have the same name, they are overridden.
+    vars:
+      container:
+        multi: false
+        options_cmd: docker ps --format '{{.Names}}'
+
+  - title: Stop Docker Containers
+    cmd: docker stop {{containers}}
+
+  - title: Find files by extensions
+    cmd: find {{path}} -type f -name '*.{{ext}}'
+    vars:
+      ext:
+        options:
+          - py
+          - go
+          - js
