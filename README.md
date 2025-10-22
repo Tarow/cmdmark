@@ -32,26 +32,25 @@ commands:
           - js
 ```
 
-## Install
+## Install & Run
 
 ### Go
 
 ```bash
 go install github.com/tarow/cmdmark@latest
+cmdmark config.yml
 ```
 
 ### Nix
 
 ```bash
-nix run github:tarow/cmdmark
+nix run github:tarow/cmdmark config.yml
 
 ```
 
-### Run
+## Shell Integration
 
-## Integrate with your Shell
-
-cmdmark will print the selected command.
+`cmdmark` will print the selected command.
 To put the selected command into the command line buffer, you can integrate cmdmark with your shell:
 
 ### Bash
