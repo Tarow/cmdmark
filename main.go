@@ -235,7 +235,7 @@ func run() error {
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 	} else {
-		return errors.New("No config file provided.")
+		return errors.New("no config file provided")
 	}
 
 	cmd, err := selectCommand(config.Commands)
