@@ -84,3 +84,23 @@ function cmdmark-select
 end
 bind \cb cmdmark-select
 ```
+
+## NixOS / Home Manager Module
+
+To use the NixOS or Home Manager module, import the flake output `nixosModules.cmdmark` or `homeModules.cmdmark`.
+You can then use the module like this:
+
+```nix
+programs.cmdmark = {
+  enable = true;
+  settings = {
+    commands = [
+      {
+        title = "Find files by extension";
+        cmd = "find {{path}} -type f -name '*.{{ext}}'";
+        vars.ext.options = ["py" "nix" "js" " go"];
+      }
+    ];
+  };
+};
+```
