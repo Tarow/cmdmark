@@ -21,7 +21,7 @@ vars:
 
   service:
     multi: false
-    options_cmd: systemctl list-units --type=service --no-legend | awk '{print $1}';
+    options_cmd: systemctl list-units --type=service --no-legend | awk '{print $1};
 
 commands:
   - title: Show Service Status
