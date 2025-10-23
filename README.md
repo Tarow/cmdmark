@@ -6,6 +6,20 @@
 
 A small fzf-driven command-bookmark tool: store shell command templates in YAML, pick a template with fzf and fill variables interactively.
 
+## Screenshots
+
+### Command Selection
+
+<img src="doc/command-selection.png" width="700">
+
+### Variable Selection
+
+<img src="doc/variable-selection.png" width="700">
+
+## Demo
+
+<img src="doc/demo.gif" width="700">
+
 ## Example
 
 ```yaml
@@ -15,7 +29,14 @@ vars:
     delimiter: " "
     options_cmd: docker ps --format '{{.Names}}'
 
+  service:
+    multi: false
+    options_cmd: systemctl list-units --type=service --no-legend | awk '{print $1}';
+
 commands:
+  - title: Show Service Status
+    cmd: systemctl status {{service}}
+
   - title: Stop Docker Containers
     cmd: docker stop {{containers}}
 
