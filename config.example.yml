@@ -40,7 +40,7 @@ commands:
 
   - title: Follow Docker Container Logs
     cmd: docker logs -f --tail 200 {{container}}
-    # Local vars - if global vars have the same name, they are overridden.
+    # Local vars - they take precedence over global vars with the same name.
     vars:
       container:
         multi: false
