@@ -76,8 +76,8 @@ func invokeFzf(inputChan chan string, extraFzfArgs []string) ([]string, int, err
 
 	rc, err := fzf.Run(options)
 
+	// fzf unfortunately doesn't seem to close output channel itself, so we have to do it for the goroutine to finish
 	close(outputChan)
-
 	wg.Wait()
 
 	return selected, rc, err
@@ -106,7 +106,9 @@ func executeCommand(cmdStr string, output chan string) {
 	if err := sc.Err(); err != nil {
 		log.Printf("reading command output %q: %v\n", cmdStr, err)
 	}
-	cmd.Wait()
+	if err = cmd.Wait(); err != nil {
+		log.Printf("command '%q' finished with error: %v\n", cmdStr, err)
+	}
 }
 
 func promptVariable(varName string, varDef *VarDefinition, currentCommand string) (string, error) {
