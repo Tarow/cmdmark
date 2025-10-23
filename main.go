@@ -134,8 +134,8 @@ func promptVariable(varName string, varDef *VarDefinition, currentCommand string
 		// Free-form variables with no definition
 		fzfArgs = append(fzfArgs, "--print-query")
 		preview = fmt.Sprintf(
-			`--preview=echo "%s" | sed -E "s|\\{\\{\\s*%s\\s*\\}\\}|$(printf "%%s" {q})|g"`,
-			currentCommand, varName,
+			`--preview=echo '%s' | sed -E "s|\\{\\{\\s*%s\\s*\\}\\}|$(printf "%%s" {q})|g"`,
+			strings.ReplaceAll(currentCommand, `'`, `\'`), varName,
 		)
 	} else if len(varDef.Options) > 0 {
 		// Predefined options
