@@ -1,12 +1,10 @@
+![Build](https://github.com/tarow/cmdmark/actions/workflows/ci.yaml/badge.svg)
+[![go report](https://goreportcard.com/badge/github.com/Tarow/cmdmark)](https://goreportcard.com/report/github.com/Tarow/cmdmark)
+[![Renovate](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com)
+
 # cmdmark
 
 A small fzf-driven command-bookmark tool: store shell command templates in YAML, pick a template with fzf and fill variables interactively.
-
-Features
-
-- fzf powered search for commands and options
-- free-form vars, predefined options or options_cmd
-- single or multi-selection with custom delimiters
 
 ## Example
 
