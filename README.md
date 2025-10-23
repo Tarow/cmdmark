@@ -8,7 +8,7 @@ A small fzf-driven command-bookmark tool: store shell command templates in YAML,
 
 ## Demo
 
-<img src="doc/demo.gif" width="700">
+<img src="doc/demo.gif">
 
 ## Example
 
@@ -118,8 +118,8 @@ programs.cmdmark = {
 
 ### Command Selection
 
-<img src="doc/command-selection.png" width="700">
+<img src="doc/command-selection.png" >
 
 ### Variable Selection
 
-<img src="doc/variable-selection.png" width="700">
+<img src="doc/variable-selection.png" >
