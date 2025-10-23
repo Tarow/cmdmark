@@ -18,6 +18,15 @@ const (
 	fieldDelimiter = "\t"
 )
 
+func toChan[T any](s []T) chan T {
+	ch := make(chan T, len(s))
+	defer close(ch)
+	for _, e := range s {
+		ch <- e
+	}
+	return ch
+}
+
 func buildCommandMap(cmds []Command) map[string]Command {
 	cmdMap := make(map[string]Command, len(cmds))
 	for _, cmd := range cmds {
@@ -35,16 +44,8 @@ func placeholderRegex(varName string) *regexp.Regexp {
 }
 
 // Runs fzf. Extra options can be set by providing FZF_DEFAULT_OPTS environment variable.
-func invokeFzf(items []string, extraFzfArgs []string) ([]string, int, error) {
-	inputChan := make(chan string)
+func invokeFzf(inputChan chan string, extraFzfArgs []string) ([]string, int, error) {
 	outputChan := make(chan string)
-
-	go func() {
-		defer close(inputChan)
-		for _, s := range items {
-			inputChan <- s
-		}
-	}()
 
 	var selected []string
 	var wg sync.WaitGroup
@@ -82,27 +83,30 @@ func invokeFzf(items []string, extraFzfArgs []string) ([]string, int, error) {
 	return selected, rc, err
 }
 
-func executeCommand(cmdStr string) ([]string, error) {
+func executeCommand(cmdStr string, output chan string) {
+	defer close(output)
 	cmd := exec.Command("sh", "-c", cmdStr)
-	output, err := cmd.Output()
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("command failed: %w", err)
+		log.Printf("failed to get stdout pipe: %v\n", err)
+		return
+	}
+	if err := cmd.Start(); err != nil {
+		log.Printf("failed to start command %q: %v\n", cmdStr, err)
+		return
 	}
 
-	var lines []string
-	scanner := bufio.NewScanner(strings.NewReader(string(output)))
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+	sc := bufio.NewScanner(stdout)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
 		if line != "" {
-			lines = append(lines, line)
+			output <- line
 		}
 	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to scan output: %w", err)
+	if err := sc.Err(); err != nil {
+		log.Printf("reading command output %q: %v\n", cmdStr, err)
 	}
-
-	return lines, nil
+	cmd.Wait()
 }
 
 func promptVariable(varName string, varDef *VarDefinition, currentCommand string) (string, error) {
@@ -117,7 +121,6 @@ func promptVariable(varName string, varDef *VarDefinition, currentCommand string
 		label = fmt.Sprintf("Select %s", varName)
 	}
 
-	options := []string{}
 	fzfArgs := []string{
 		fmt.Sprintf("--input-label=%s", label),
 	}
@@ -130,7 +133,9 @@ func promptVariable(varName string, varDef *VarDefinition, currentCommand string
 		strings.ReplaceAll(currentCommand, `'`, `\'`), varName, delimiter,
 	)
 
+	options := make(chan string)
 	if varDef == nil {
+		close(options)
 		// Free-form variables with no definition
 		fzfArgs = append(fzfArgs, "--print-query")
 		preview = fmt.Sprintf(
@@ -139,13 +144,10 @@ func promptVariable(varName string, varDef *VarDefinition, currentCommand string
 		)
 	} else if len(varDef.Options) > 0 {
 		// Predefined options
-		options = varDef.Options
+		options = toChan(varDef.Options)
 	} else if varDef.OptionsCmd != "" {
 		// Options from command
-		options, err = executeCommand(varDef.OptionsCmd)
-		if err != nil {
-			return "", fmt.Errorf("failed to get options from command: %w", err)
-		}
+		go executeCommand(varDef.OptionsCmd, options)
 	}
 	fzfArgs = append(fzfArgs, preview)
 
@@ -193,10 +195,13 @@ func replaceVariables(template string, vars map[string]VarDefinition) (string, e
 }
 
 func selectCommand(cmds []Command) (*Command, error) {
-	lines := make([]string, 0, len(cmds))
-	for _, cmd := range cmds {
-		lines = append(lines, formatLine(cmd.Title, cmd.Cmd))
-	}
+	input := make(chan string, len(cmds))
+	go func() {
+		defer close(input)
+		for _, cmd := range cmds {
+			input <- formatLine(cmd.Title, cmd.Cmd)
+		}
+	}()
 
 	args := []string{
 		"--with-nth=1",
@@ -204,7 +209,7 @@ func selectCommand(cmds []Command) (*Command, error) {
 		"--input-label=Select Command",
 		"--list-label=Commands",
 	}
-	selectedLines, rc, err := invokeFzf(lines, args)
+	selectedLines, rc, err := invokeFzf(input, args)
 	if err != nil {
 		return nil, fmt.Errorf("command selection failed: %w", err)
 	}
