@@ -206,23 +206,22 @@ func selectCommand(cmds []Command) (*Command, error) {
 	}()
 
 	args := []string{
-		"--with-nth=1",
+		"--with-nth={1}",
+		"--accept-nth={1}",
 		"--preview=echo {2}",
 		"--input-label=Select Command",
 		"--list-label=Commands",
 	}
-	selectedLines, rc, err := invokeFzf(input, args)
+	selection, rc, err := invokeFzf(input, args)
 	if err != nil {
 		return nil, fmt.Errorf("command selection failed: %w", err)
 	}
 
-	if len(selectedLines) == 0 || rc == fzf.ExitInterrupt {
+	if len(selection) == 0 || rc == fzf.ExitInterrupt {
 		return nil, nil
 	}
 
-	parts := strings.Split(selectedLines[0], fieldDelimiter)
-	selectedID := parts[0]
-
+	selectedID := selection[0]
 	cmdMap := buildCommandMap(cmds)
 	cmd, exists := cmdMap[selectedID]
 	if !exists {
