@@ -55,10 +55,6 @@ func listLabelArg(value ...string) string {
 	return arg("input-label", value...)
 }
 
-func nthArg(value ...string) string {
-	return arg("nth", value...)
-}
-
 func withNthArg(value ...string) string {
 	return arg("with-nth", value...)
 }
