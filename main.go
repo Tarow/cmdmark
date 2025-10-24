@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
-	"sync"
 
 	fzf "github.com/junegunn/fzf/src"
 )
@@ -43,46 +42,6 @@ func placeholderRegex(varName string) *regexp.Regexp {
 	return regexp.MustCompile(`{{\s*` + regexp.QuoteMeta(varName) + `\s*}}`)
 }
 
-// Runs fzf. Extra options can be set by providing FZF_DEFAULT_OPTS environment variable.
-func invokeFzf(inputChan chan string, extraFzfArgs []string) ([]string, int, error) {
-	outputChan := make(chan string)
-
-	var selected []string
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for s := range outputChan {
-			selected = append(selected, s)
-		}
-	}()
-
-	args := append([]string{
-		"--bind=ctrl-c:become:",
-		"--preview-window=wrap,up:3",
-		"--bind=F2:toggle-preview",
-		"--preview-label=Command Preview",
-		"--style=full",
-		fmt.Sprintf("--delimiter=%s", fieldDelimiter),
-	}, extraFzfArgs...)
-
-	options, err := fzf.ParseOptions(true, args)
-	if err != nil {
-		return nil, -1, fmt.Errorf("failed to parse fzf options: %w", err)
-	}
-
-	options.Input = inputChan
-	options.Output = outputChan
-
-	rc, err := fzf.Run(options)
-
-	// fzf unfortunately doesn't seem to close output channel itself, so we have to do it for the goroutine to finish
-	close(outputChan)
-	wg.Wait()
-
-	return selected, rc, err
-}
-
 func executeCommand(cmdStr string, output chan string) {
 	defer close(output)
 	cmd := exec.Command("sh", "-c", cmdStr)
@@ -113,45 +72,40 @@ func executeCommand(cmdStr string, output chan string) {
 
 func promptVariable(varName string, varDef *VarDefinition, currentCommand string) (string, error) {
 	var err error
-
-	delimiter := " "
-	label := fmt.Sprintf("Enter value for {{%s}}", varName)
-	if varDef != nil {
-		if varDef.Multi {
-			delimiter = varDef.Delimiter
-		}
-		label = fmt.Sprintf("Select %s", varName)
-	}
-
-	fzfArgs := []string{
-		fmt.Sprintf("--input-label=%s", label),
-	}
-	if varDef != nil && varDef.Multi {
-		fzfArgs = append(fzfArgs, "--multi")
-	}
-
-	preview := fmt.Sprintf(
-		`--preview=echo '%s' | sed -E "s|\\{\\{\\s*%s\\s*\\}\\}|$(printf "%%s\n" {+} | paste -sd '%s')|g"`,
-		strings.ReplaceAll(currentCommand, `'`, `\'`), varName, delimiter,
-	)
-
+	fzfArgs := make([]string, 0)
 	options := make(chan string)
+	delimiter := " "
+	var label string
+	var preview string
+
+	escapedCurrentCommand := strings.ReplaceAll(currentCommand, `'`, `\'`)
 	if varDef == nil {
 		close(options)
 		// Free-form variables with no definition
-		fzfArgs = append(fzfArgs, "--print-query")
+		fzfArgs = append(fzfArgs, printQueryArg())
+		label = fmt.Sprintf("Enter value for {{%s}}", varName)
 		preview = fmt.Sprintf(
-			`--preview=echo '%s' | sed -E "s|\\{\\{\\s*%s\\s*\\}\\}|$(printf "%%s" {q})|g"`,
-			strings.ReplaceAll(currentCommand, `'`, `\'`), varName,
+			`[ -z {q} ] && echo "%[1]s" || echo '%[1]s' | sed -E "s|\\{\\{\\s*%s\\s*\\}\\}|$(printf "%%s" {q})|g"`,
+			escapedCurrentCommand, varName,
 		)
-	} else if len(varDef.Options) > 0 {
-		// Predefined options
-		options = toChan(varDef.Options)
-	} else if varDef.OptionsCmd != "" {
-		// Options from command
-		go executeCommand(varDef.OptionsCmd, options)
+	} else {
+		label = fmt.Sprintf("Select %s", varName)
+		preview = fmt.Sprintf(
+			`[ -z {+} ] && echo '%[1]s' || echo '%[1]s' | sed -E "s|\\{\\{\\s*%s\\s*\\}\\}|$(printf "%%s\n" {+} | paste -sd '%s')|g"`,
+			escapedCurrentCommand, varName, delimiter,
+		)
+		delimiter = varDef.Delimiter
+		if varDef.Multi {
+			fzfArgs = append(fzfArgs, multiArg())
+		}
+
+		if len(varDef.Options) > 0 {
+			options = toChan(varDef.Options)
+		} else if varDef.OptionsCmd != "" {
+			go executeCommand(varDef.OptionsCmd, options)
+		}
 	}
-	fzfArgs = append(fzfArgs, preview)
+	fzfArgs = append(fzfArgs, inputLabelArg(label), previewArg(preview))
 
 	selected, _, err := invokeFzf(options, fzfArgs)
 
@@ -206,11 +160,11 @@ func selectCommand(cmds []Command) (*Command, error) {
 	}()
 
 	args := []string{
-		"--with-nth={1}",
-		"--accept-nth={1}",
-		"--preview=echo {2}",
-		"--input-label=Select Command",
-		"--list-label=Commands",
+		withNthArg("{1}"),
+		acceptNthArg("{1}"),
+		previewArg("echo {2}"),
+		inputLabelArg("Select Command"),
+		listLabelArg("Commands"),
 	}
 	selection, rc, err := invokeFzf(input, args)
 	if err != nil {
