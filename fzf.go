@@ -1,3 +1,4 @@
+//nolint:unused
 package main
 
 import (
@@ -52,7 +53,23 @@ func inputLabelArg(value ...string) string {
 }
 
 func listLabelArg(value ...string) string {
-	return arg("input-label", value...)
+	return arg("list-label", value...)
+}
+
+func headerArg(value ...string) string {
+	return arg("header", value...)
+}
+
+func headerLabelArg(value ...string) string {
+	return arg("header-label", value...)
+}
+
+func reverseArg() string {
+	return arg("reverse")
+}
+
+func promptArg(value ...string) string {
+	return arg("prompt", value...)
 }
 
 func withNthArg(value ...string) string {
@@ -78,7 +95,7 @@ func invokeFzf(inputChan chan string, extraFzfArgs []string) ([]string, int, err
 
 	args := append([]string{
 		bindingArg("ctrl-c:become:"),
-		bindingArg("F2:toggle-preview"),
+		headerLabelArg("Keybindings"),
 		previewWindowArg("wrap", "up:3"),
 		previewLabelArg("Command Preview"),
 		styleArg("full"),
