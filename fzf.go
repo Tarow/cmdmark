@@ -96,7 +96,7 @@ func invokeFzf(inputChan chan string, extraFzfArgs []string) ([]string, int, err
 	args := append([]string{
 		bindingArg("ctrl-c:become:"),
 		headerLabelArg("Keybindings"),
-		previewWindowArg("wrap", "up:3"),
+		previewWindowArg("wrap", "down:3"),
 		previewLabelArg("Command Preview"),
 		styleArg("full"),
 		delimiterArg(fieldDelimiter),
