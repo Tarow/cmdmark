@@ -174,7 +174,7 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 
 	fmt.Println(currentCommand)
 	preview = fmt.Sprintf(
-		`go run . preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
+		`cmdmark preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
 		currentCommand,
 		varName,
 		isRequired,
