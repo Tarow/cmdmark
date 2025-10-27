@@ -1,5 +1,5 @@
 //nolint:unused
-package main
+package internal
 
 import (
 	"fmt"
@@ -7,6 +7,10 @@ import (
 	"sync"
 
 	fzf "github.com/junegunn/fzf/src"
+)
+
+const (
+	fieldDelimiter = "\t"
 )
 
 func arg(key string, value ...string) string {

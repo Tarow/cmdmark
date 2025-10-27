@@ -1,0 +1,115 @@
+package main
+
+import (
+	"fmt"
+	"maps"
+	"os"
+	"strings"
+
+	"go.yaml.in/yaml/v4"
+)
+
+var (
+	defaultMulti         = false
+	defaultDelimiter     = " "
+	defaultRequired      = true
+	defaultAllowFreeform = false
+)
+
+type Config struct {
+	GlobalVars map[string]VarDefinition `yaml:"vars"`
+	Commands   []Command                `yaml:"commands"`
+}
+
+type VarDefinition struct {
+	Options       []string `yaml:"options"`
+	OptionsCmd    string   `yaml:"options_cmd"`
+	Multi         *bool    `yaml:"multi"`
+	Delimiter     *string  `yaml:"delimiter"`
+	Required      *bool    `yaml:"required"`
+	AllowFreeform *bool    `yaml:"allowFreeform"`
+}
+
+type Command struct {
+	Title string                   `yaml:"title"`
+	Cmd   string                   `yaml:"cmd"`
+	Vars  map[string]VarDefinition `yaml:"vars"`
+}
+
+func loadConfig(filename string) (Config, error) {
+	var config Config
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return Config{}, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return Config{}, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	config = applyDefaults(config)
+	return config, validateConfig(config)
+}
+
+func validateConfig(cfg Config) error {
+	for varName, globalVar := range cfg.GlobalVars {
+		if err := validateVariable(varName, globalVar); err != nil {
+			return err
+		}
+	}
+	for _, cmd := range cfg.Commands {
+		for varName, v := range cmd.Vars {
+			if err := validateVariable(varName, v); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateVariable(varName string, varDef VarDefinition) error {
+	// No options provided and no freeform allowed
+	if len(varDef.Options) == 0 && strings.TrimSpace(varDef.OptionsCmd) == "" && !*varDef.AllowFreeform {
+		return fmt.Errorf("validation failed for variable %s: when options or options_cmd are not provided, allowFreeform has to be set to true", varName)
+	}
+	return nil
+}
+
+func applyDefaults(cfg Config) Config {
+	for varName, globalVar := range cfg.GlobalVars {
+		cfg.GlobalVars[varName] = applyVariableDefaults(globalVar)
+	}
+	for i, cmd := range cfg.Commands {
+		for varName, v := range cmd.Vars {
+			cmd.Vars[varName] = applyVariableDefaults(v)
+		}
+		cfg.Commands[i] = cmd
+	}
+	return cfg
+}
+
+func applyVariableDefaults(v VarDefinition) VarDefinition {
+	if v.Delimiter == nil {
+		v.Delimiter = &defaultDelimiter
+	}
+	if v.Multi == nil {
+		v.Multi = &defaultMulti
+	}
+	if v.Required == nil {
+		v.Required = &defaultRequired
+	}
+	if v.AllowFreeform == nil {
+		v.AllowFreeform = &defaultAllowFreeform
+	}
+	return v
+}
+
+func mergeVars(globalVars map[string]VarDefinition, commandVars map[string]VarDefinition) map[string]VarDefinition {
+	result := globalVars
+	if result == nil {
+		result = make(map[string]VarDefinition)
+	}
+	maps.Copy(result, commandVars)
+	return result
+}
