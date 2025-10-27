@@ -174,15 +174,14 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 
 	fmt.Println(currentCommand)
 	preview = fmt.Sprintf(
-		`cmdmark preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
+		`go run . preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
 		currentCommand,
 		varName,
 		isRequired,
 		allowFreeform,
 		delimiter,
 	)
-	fzfArgs = append(fzfArgs, bindingArg(fmt.Sprintf("ctrl-t:become(echo $(%s) && %s)", preview, preview)))
-	fmt.Println(preview)
+
 	if *varDef.Multi {
 		fzfArgs = append(fzfArgs, multiArg())
 	}
