@@ -47,13 +47,13 @@ commands:
 
 ```bash
 go install github.com/tarow/cmdmark@latest
-cmdmark config.yml
+cmdmark search --config config.yml
 ```
 
 ### Nix
 
 ```bash
-nix run github:tarow/cmdmark config.yml
+nix run github:tarow/cmdmark -- search --config config.yml
 
 ```
 
