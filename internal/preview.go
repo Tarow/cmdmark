@@ -31,24 +31,27 @@ func newPreviewCommand() *cli.Command {
 			query := c.String("query")
 
 			selections := c.Args().Slice()
-
-			//fmt.Printf("selections: %v\tdelimiter: %v\ttemplate:%v\tquery:%v\n",
-			//	len(selections), delimiter, template, len(query))
+			var filteredSelections []string
+			for _, v := range selections {
+				if v != "" {
+					filteredSelections = append(filteredSelections, v)
+				}
+			}
 
 			var value string
 
 			switch {
-			case len(selections) > 0:
+			case len(filteredSelections) > 0:
 				if delimiter != "" {
-					value = strings.Join(selections, delimiter)
+					value = strings.Join(filteredSelections, delimiter)
 				} else {
-					value = strings.Join(selections, " ")
+					value = strings.Join(filteredSelections, " ")
 				}
 
 			case allowFreeform && query != "":
 				value = query
 
-			case len(selections) == 0 && query == "":
+			case len(filteredSelections) == 0 && query == "":
 				fmt.Println(template)
 				return nil
 

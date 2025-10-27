@@ -54,7 +54,7 @@ func newSearchCommand() *cli.Command {
 			if err != nil {
 				return err
 			}
-			return run(config)
+			return runSearch(config)
 		},
 	}
 }
@@ -174,7 +174,7 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 
 	fmt.Println(currentCommand)
 	preview = fmt.Sprintf(
-		`go run . preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} {+}`,
+		`go run . preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
 		currentCommand,
 		varName,
 		isRequired,
@@ -223,7 +223,7 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 	keybindingsLabel := strings.Join(keybindings, " | ")
 	if isLast {
 		inputLabelTransform := fmt.Sprintf(`focus:transform-input-label:%v && echo '%v' || echo '%v'`, valuePresentCheck, keybindingsLabel+" | Ctrl-E: Execute", keybindingsLabel)
-		exec := fmt.Sprintf("ctrl-e:transform:%v && echo 'become(eval $(%v))' || echo ignore", valuePresentCheck, preview)
+		exec := fmt.Sprintf("ctrl-e:transform:%v && echo 'become(eval $(%v))' || echo ignore", valuePresentCheck, strings.ReplaceAll(preview, `'`, `\'`))
 		fzfArgs = append(fzfArgs, bindingArg(inputLabelTransform), bindingArg(exec))
 	} else {
 		fzfArgs = append(fzfArgs, inputLabelArg(keybindingsLabel))
@@ -307,7 +307,7 @@ func extractVariableNames(template string) []string {
 	return uniqueVars
 }
 
-func run(config Config) error {
+func runSearch(config Config) error {
 	var err error
 
 	commandVariables := map[int][]string{}
