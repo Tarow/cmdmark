@@ -54,10 +54,10 @@
                 ./go.mod
                 ./go.sum
                 ./main.go
-                ./config.go
+                ./internal
               ];
             };
-            vendorHash = "sha256-yyogHNuGogtJcsSvylp6NrL2ffjwW+OCD5gc0ajBG+c=";
+            vendorHash = "sha256-3CtH6XbRCT4udYYwKWvgZkzZ3n0eCQFg90S/KEm80og=";
             meta.mainProgram = "cmdmark";
           };
         });
@@ -72,11 +72,16 @@
         cfg = config.programs.cmdmark;
         yaml = pkgs.formats.yaml {};
         cmdMark = self.packages.${pkgs.stdenv.hostPlatform.system}.cmdmark;
-        wrappedCmdMark = pkgs.symlinkJoin {
-          name = cmdMark.name;
-          paths = [cmdMark];
-          buildInputs = [pkgs.makeWrapper];
-          postBuild = "wrapProgram $out/bin/cmdmark --add-flags ${cfg.settings}";
+        wrappedCmdMark = pkgs.writeShellApplication {
+          name = "cmdmark";
+          text = ''
+            if [[ "''${1:-}" == "search" ]]; then
+              shift
+              exec ${lib.getExe cmdMark} search --config ${cfg.settings} "$@"
+            else
+              exec ${lib.getExe cmdMark} "$@"
+            fi
+          '';
         };
       in {
         options.programs.cmdmark = {

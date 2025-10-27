@@ -73,7 +73,7 @@ To put the selected command into the command line buffer, you can integrate cmdm
 
 ```sh
 function cmdmark-select() {
-  BUFFER=$(cmdmark ~/.config/cmdmark/config.yml)
+  BUFFER=$(cmdmark search --config ~/.config/cmdmark/config.yml)
   READLINE_LINE=$BUFFER
   READLINE_POINT=${#BUFFER}
 }
@@ -84,7 +84,7 @@ bind -x '"\C-b": cmdmark-select'
 
 ```sh
 function cmdmark-select() {
-  BUFFER=$(cmdmark ~/.config/cmdmark/config.yml)
+  BUFFER=$(cmdmark search --config ~/.config/cmdmark/config.yml)
   CURSOR=$#BUFFER
   zle redisplay
 }
@@ -96,7 +96,7 @@ bindkey '^b' cmdmark-select
 
 ```sh
 function cmdmark-select
-    commandline -r -- $(cmdmark ~/.config/cmdmark/config.yml)
+    commandline -r -- $(cmdmark search --config ~/.config/cmdmark/config.yml)
 end
 bind \cb cmdmark-select
 ```
