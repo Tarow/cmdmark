@@ -173,7 +173,7 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 	allowFreeform := *varDef.AllowFreeform
 
 	preview = fmt.Sprintf(
-		`go run . preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
+		`cmdmark preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
 		currentCommand,
 		varName,
 		isRequired,
@@ -217,12 +217,13 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 	}
 
 	fzfArgs = append(fzfArgs, promptArg(prompt+": "), previewArg(preview))
+
 	// we can only execute directly if query is filled or entry is selected AND this var is the last one to be replaced
 	keybindingsLabel := strings.Join(keybindings, " | ")
 	if isLast {
-		inputLabelTransform := fmt.Sprintf(`focus:transform-input-label:%v && echo '%v' || echo '%v'`, valuePresentCheck, keybindingsLabel+" | Ctrl-E: Execute", keybindingsLabel)
-		exec := fmt.Sprintf("ctrl-e:transform:%v && echo 'become(eval $(%v))' || echo ignore", valuePresentCheck, strings.ReplaceAll(preview, `'`, `\'`))
-		fzfArgs = append(fzfArgs, bindingArg(inputLabelTransform), bindingArg(exec))
+		transform := fmt.Sprintf(`start,change,focus:transform:%v && echo "change-input-label(%v)+rebind(ctrl-e)" || echo "change-input-label(%v)+unbind(ctrl-e)"`, valuePresentCheck, keybindingsLabel+" | Ctrl-E: Execute", keybindingsLabel)
+		exec := fmt.Sprintf(`ctrl-e:become(eval $(%v))`, preview)
+		fzfArgs = append(fzfArgs, bindingArg(transform), bindingArg(exec))
 	} else {
 		fzfArgs = append(fzfArgs, inputLabelArg(keybindingsLabel))
 	}
