@@ -24,7 +24,14 @@ commands:
     cmd: rg {{pattern}} {{path}} --hidden --glob '!node_modules'
 
   - title: Follow Systemd Service Logs
-    cmd: journalctl -u {{service}} -f
+    cmd: journalctl {{flags}} -u {{service}} -f
+    vars:
+      flags:
+        required: false
+        multi: true
+        options:
+          - --boot
+          - --since "1 hour ago"
 
   - title: SSH to Host
     cmd: ssh {{sshHost}}
@@ -34,6 +41,7 @@ commands:
     vars:
       remotePath:
         multi: false
+        allowFreeform: true
         options:
           - /tmp
           - /home/$USER

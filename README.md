@@ -24,8 +24,15 @@ vars:
     options_cmd: systemctl list-units --type=service --no-legend | awk '{print $1};
 
 commands:
-  - title: Show Service Status
-    cmd: systemctl status {{service}}
+  - title: Follow Systemd Service Logs
+    cmd: journalctl {{flags}} -u {{service}} -f
+    vars:
+      flags:
+        required: false
+        multi: true
+        options:
+          - --boot
+          - --since "1 hour ago"
 
   - title: Stop Docker Containers
     cmd: docker stop {{containers}}

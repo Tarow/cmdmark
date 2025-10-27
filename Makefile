@@ -3,7 +3,7 @@ BINARY_NAME := cmdmark
 all: clean install tidy build
 
 run: 
-	go run . config.yml
+	go run . search --config config.yml
 
 build:
 	go build -o bin/$(BINARY_NAME) .
