@@ -172,7 +172,6 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 	isRequired := *varDef.Required
 	allowFreeform := *varDef.AllowFreeform
 
-	fmt.Println(currentCommand)
 	preview = fmt.Sprintf(
 		`go run . preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
 		currentCommand,

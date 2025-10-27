@@ -59,7 +59,7 @@ nix run github:tarow/cmdmark config.yml
 
 ## Shell Integration
 
-`cmdmark` will print the selected command.
+When accepting a selection, `cmdmark` will print the command.
 To put the selected command into the command line buffer, you can integrate cmdmark with your shell:
 
 ### Bash
