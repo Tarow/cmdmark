@@ -26,6 +26,10 @@ func newSearchCommand() *cli.Command {
 				Usage:   "Path to config file (default: ~/.config/cmdmark/config.yaml or /etc/cmdmark/config.yaml)",
 				Aliases: []string{"c"},
 			},
+			&cli.BoolFlag{
+				Name:  "enable-execution",
+				Usage: "Whether to allow direct execution using fzf's 'become' action",
+			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			configPath := c.String("config")
@@ -54,7 +58,7 @@ func newSearchCommand() *cli.Command {
 			if err != nil {
 				return err
 			}
-			return runSearch(config)
+			return runSearch(config, c.Bool("enable-execution"))
 		},
 	}
 }
@@ -112,7 +116,7 @@ func executeCommand(cmdStr string, output chan string) {
 	}
 }
 
-func replaceVariables(template string, varNames []string, vars map[string]VarDefinition) (string, error) {
+func replaceVariables(template string, varNames []string, vars map[string]VarDefinition, execEnabled bool) (string, error) {
 	result := template
 
 	for idx, varName := range varNames {
@@ -127,7 +131,7 @@ func replaceVariables(template string, varNames []string, vars map[string]VarDef
 			}
 		}
 
-		val, err := promptVariable(varName, varDef, result, idx == len(varNames)-1)
+		val, err := promptVariable(varName, varDef, result, idx == len(varNames)-1, execEnabled)
 		if err != nil {
 			return "", fmt.Errorf("failed to read variable %q: %w", varName, err)
 		}
@@ -156,7 +160,7 @@ func valuePresentCheck(varDef VarDefinition) string {
 	return valuePresentCheck
 }
 
-func promptVariable(varName string, varDef VarDefinition, currentCommand string, isLast bool) (string, error) {
+func promptVariable(varName string, varDef VarDefinition, currentCommand string, isLast bool, execEnabled bool) (string, error) {
 	var err error
 	options := make(chan string)
 	delimiter := *varDef.Delimiter
@@ -220,7 +224,7 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 
 	// we can only execute directly if query is filled or entry is selected AND this var is the last one to be replaced
 	keybindingsLabel := strings.Join(keybindings, " | ")
-	if isLast {
+	if isLast && execEnabled {
 		transform := fmt.Sprintf(`start,change,focus:transform:%v && echo "change-input-label(%v)+rebind(ctrl-e)" || echo "change-input-label(%v)+unbind(ctrl-e)"`, valuePresentCheck, keybindingsLabel+" | Ctrl-E: Execute", keybindingsLabel)
 		exec := fmt.Sprintf(`ctrl-e:become(eval $(%v))`, preview)
 		fzfArgs = append(fzfArgs, bindingArg(transform), bindingArg(exec))
@@ -236,7 +240,7 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 	return strings.Join(selected, delimiter), nil
 }
 
-func selectCommand(cmds []Command, commandVariables map[int][]string) (*Command, int, error) {
+func selectCommand(cmds []Command, commandVariables map[int][]string, execEnabled bool) (*Command, int, error) {
 	input := make(chan string, len(cmds))
 	go func() {
 		defer close(input)
@@ -245,7 +249,7 @@ func selectCommand(cmds []Command, commandVariables map[int][]string) (*Command,
 			executeAction := "ignore"
 
 			// If command has no vars, direct execution can be triggered
-			if len(commandVariables[idx]) == 0 {
+			if len(commandVariables[idx]) == 0 && execEnabled {
 				inputLabel = append(inputLabel, "Ctrl-E: Execute")
 				executeAction = "become(eval $(echo {3}))"
 			}
@@ -306,7 +310,7 @@ func extractVariableNames(template string) []string {
 	return uniqueVars
 }
 
-func runSearch(config Config) error {
+func runSearch(config Config, execEnabled bool) error {
 	var err error
 
 	commandVariables := map[int][]string{}
@@ -314,14 +318,14 @@ func runSearch(config Config) error {
 		commandVariables[idx] = extractVariableNames(cmd.Cmd)
 	}
 
-	cmd, cmdIdx, err := selectCommand(config.Commands, commandVariables)
+	cmd, cmdIdx, err := selectCommand(config.Commands, commandVariables, execEnabled)
 	if err != nil || cmd == nil {
 		return err
 	}
 
 	mergedVars := mergeVars(config.GlobalVars, cmd.Vars)
 
-	fullCmd, err := replaceVariables(cmd.Cmd, commandVariables[cmdIdx], mergedVars)
+	fullCmd, err := replaceVariables(cmd.Cmd, commandVariables[cmdIdx], mergedVars, execEnabled)
 	if err != nil {
 		return err
 	}
