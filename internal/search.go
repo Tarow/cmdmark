@@ -148,7 +148,7 @@ func valuePresentCheck(varDef VarDefinition) string {
 	valuePresentCheck := ""
 
 	if *varDef.Multi {
-		valuePlaceholder = "{+}"
+		valuePlaceholder = "{+1}"
 	} else {
 		valuePlaceholder = "{}"
 	}
@@ -166,7 +166,10 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 	delimiter := *varDef.Delimiter
 	var prompt string
 	var preview string
-	var fzfArgs []string
+
+	fzfArgs := []string{
+		acceptNthArg("{1}"),
+	}
 
 	// Check condition to see if value is present. Necessary for certain binds, e.g. if direct execution is possible
 	valuePresentCheck := valuePresentCheck(varDef)
@@ -177,7 +180,7 @@ func promptVariable(varName string, varDef VarDefinition, currentCommand string,
 	allowFreeform := *varDef.AllowFreeform
 
 	preview = fmt.Sprintf(
-		`cmdmark preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+}`,
+		`cmdmark preview --template %q --varName %q --required=%t --allowFreeform=%t --delimiter %q --query {q} -- {+1}`,
 		currentCommand,
 		varName,
 		isRequired,
@@ -269,6 +272,7 @@ func selectCommand(cmds []Command, commandVariables map[int][]string, execEnable
 		//inputLabelArg("Select Command"),
 		listLabelArg("Commands"),
 		inputLabelArg("Ctrl-C: Quit"),
+		delimiterArg(fieldDelimiter),
 	}
 	selection, rc, err := invokeFzf(input, args)
 	if err != nil {
