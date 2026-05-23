@@ -3,7 +3,7 @@ module github.com/tarow/cmdmark
 go 1.24.6
 
 require (
-	github.com/junegunn/fzf v0.72.0
+	github.com/junegunn/fzf v0.73.0
 	github.com/urfave/cli/v3 v3.9.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
 )
@@ -14,7 +14,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.11.0 // indirect
 	github.com/junegunn/go-shellwords v0.0.0-20250127100254-2aa3b3277741 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/term v0.37.0 // indirect
