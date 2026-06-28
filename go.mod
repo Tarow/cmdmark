@@ -4,7 +4,7 @@ go 1.24.6
 
 require (
 	github.com/junegunn/fzf v0.73.1
-	github.com/urfave/cli/v3 v3.10.0
+	github.com/urfave/cli/v3 v3.10.1
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 )
 
