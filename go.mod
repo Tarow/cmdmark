@@ -3,7 +3,7 @@ module github.com/tarow/cmdmark
 go 1.24.6
 
 require (
-	github.com/junegunn/fzf v0.74.0
+	github.com/junegunn/fzf v0.74.1
 	github.com/urfave/cli/v3 v3.10.1
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 )
