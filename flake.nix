@@ -57,7 +57,7 @@
                 ./internal
               ];
             };
-            vendorHash = "sha256-/KBlZVQsLtR4Eark3MBBZCjQOhfqP9eScoTeE8bmWsE=";
+            vendorHash = "sha256-B1dwqqqFsmQan81tT6iznVbc2+mO95t51HzWdSsldNs=";
             meta.mainProgram = "cmdmark";
           };
         });
